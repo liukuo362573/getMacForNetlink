@@ -50,10 +50,8 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-
-
 extern "C" {
-    __inline__ __attribute__((always_inline))  long raw_syscall(long __number, ...);
+__inline__ __attribute__((always_inline))  long raw_syscall(long __number, ...);
 }
 
 /**
@@ -64,88 +62,86 @@ extern "C" {
  * @author zhenxi by 2022年1月18日14:07:54
  */
 NetlinkConnection::NetlinkConnection() {
-  fd_ = -1;
+    fd_ = -1;
 
-  // The kernel keeps packets under 8KiB (NLMSG_GOODSIZE),
-  // but that's a bit too large to go on the stack.
-  size_ = 8192;
-  data_ = new char[size_];
+    // The kernel keeps packets under 8KiB (NLMSG_GOODSIZE),
+    // but that's a bit too large to go on the stack.
+    size_ = 8192;
+    data_ = new char[size_];
 }
 
 NetlinkConnection::~NetlinkConnection() {
 //  ErrnoRestorer errno_restorer;
-  if (fd_ != -1) close(fd_);
-  delete[] data_;
+    if (fd_ != -1) close(fd_);
+    delete[] data_;
 }
 
 bool NetlinkConnection::SendRequest(int type) {
-  // Rather than force all callers to check for the unlikely event of being
-  // unable to allocate 8KiB, check here.
-  // NetlinkConnection构造方法 的时候生成的8kb的data内存
-  if (data_ == nullptr) return false;
+    // Rather than force all callers to check for the unlikely event of being
+    // unable to allocate 8KiB, check here.
+    // NetlinkConnection构造方法 的时候生成的8kb的data内存
+    if (data_ == nullptr) return false;
 
-  // Did we open a netlink socket yet?
-  if (fd_ == -1) {
-    //尝试建立socket netlink 链接
-    fd_ = socket(PF_NETLINK, SOCK_RAW | SOCK_CLOEXEC, NETLINK_ROUTE);
-    if (fd_ == -1) return false;
-  }
+    // Did we open a netlink socket yet?
+    if (fd_ == -1) {
+        //尝试建立socket netlink 链接
+        fd_ = socket(PF_NETLINK, SOCK_RAW | SOCK_CLOEXEC, NETLINK_ROUTE);
+        if (fd_ == -1) return false;
+    }
 
-  // Construct and send the message.
-  struct NetlinkMessage {
-    nlmsghdr hdr;
-    rtgenmsg msg;
-  } request;
+    // Construct and send the message.
+    struct NetlinkMessage {
+        nlmsghdr hdr;
+        rtgenmsg msg;
+    } request;
 
-  memset(&request, 0, sizeof(request));
-  request.hdr.nlmsg_flags = NLM_F_DUMP | NLM_F_REQUEST;
-  request.hdr.nlmsg_type = type;
-  request.hdr.nlmsg_len = sizeof(request);
-  // All families
-  request.msg.rtgen_family = AF_UNSPEC;
-  //使用socket数据发送
-  return (TEMP_FAILURE_RETRY(send(fd_, &request, sizeof(request), 0)) == sizeof(request));
+    memset(&request, 0, sizeof(request));
+    request.hdr.nlmsg_flags = NLM_F_DUMP | NLM_F_REQUEST;
+    request.hdr.nlmsg_type = type;
+    request.hdr.nlmsg_len = sizeof(request);
+    // All families
+    request.msg.rtgen_family = AF_UNSPEC;
+    //使用socket数据发送
+    return (TEMP_FAILURE_RETRY(send(fd_, &request, sizeof(request), 0)) == sizeof(request));
 }
+
 /*
  * 获取socket的返回结果
  */
-bool NetlinkConnection::ReadResponses(void callback(void*, nlmsghdr*), void* out) {
-  // Read through all the responses, handing interesting ones to the callback.
-  ssize_t bytes_read;
+bool NetlinkConnection::ReadResponses(void callback(void *, nlmsghdr *), void *out) {
+    // Read through all the responses, handing interesting ones to the callback.
+    ssize_t bytes_read;
 
-  struct iovec iov{};
-  iov.iov_base = data_;
-  iov.iov_len = size_;
+    struct iovec iov{};
+    iov.iov_base = data_;
+    iov.iov_len = size_;
 
-  struct sockaddr_nl nladdr{};
-  struct msghdr msg = {
-          .msg_name = &nladdr,
-          .msg_namelen = sizeof(nladdr),
-          .msg_iov = &iov,
-          .msg_iovlen = 1,
-  };
-
-
+    struct sockaddr_nl nladdr{};
+    struct msghdr msg = {
+            .msg_name = &nladdr,
+            .msg_namelen = sizeof(nladdr),
+            .msg_iov = &iov,
+            .msg_iovlen = 1,
+    };
 
 //while ((bytes_read = TEMP_FAILURE_RETRY(raw_syscall(__NR_recvfrom,fd_, data_, size_, 0, NULL,0))) > 0) {
 //    auto* hdr = reinterpret_cast<nlmsghdr*>(data_);
 
-while ((bytes_read = TEMP_FAILURE_RETRY(raw_syscall(__NR_recvmsg,fd_,&msg, 0))) > 0){
-    auto* hdr = reinterpret_cast<nlmsghdr*>(msg.msg_iov->iov_base);
+    while ((bytes_read = TEMP_FAILURE_RETRY(raw_syscall(__NR_recvmsg, fd_, &msg, 0))) > 0) {
+        auto *hdr = reinterpret_cast<nlmsghdr *>(msg.msg_iov->iov_base);
 
-    for (; NLMSG_OK(hdr, static_cast<size_t>(bytes_read)); hdr = NLMSG_NEXT(hdr, bytes_read)) {
-      //判断是否读取结束,否则读取callback
-      if (hdr->nlmsg_type == NLMSG_DONE) return true;
-      if (hdr->nlmsg_type == NLMSG_ERROR) {
-        auto* err = reinterpret_cast<nlmsgerr*>(NLMSG_DATA(hdr));
-        errno = (hdr->nlmsg_len >= NLMSG_LENGTH(sizeof(nlmsgerr))) ? -err->error : EIO;
-        return false;
-      }
-      //处理具体逻辑
-      callback(out, hdr);
+        for (; NLMSG_OK(hdr, static_cast<size_t>(bytes_read)); hdr = NLMSG_NEXT(hdr, bytes_read)) {
+            //判断是否读取结束,否则读取callback
+            if (hdr->nlmsg_type == NLMSG_DONE) return true;
+            if (hdr->nlmsg_type == NLMSG_ERROR) {
+                auto *err = reinterpret_cast<nlmsgerr *>(NLMSG_DATA(hdr));
+                errno = (hdr->nlmsg_len >= NLMSG_LENGTH(sizeof(nlmsgerr))) ? -err->error : EIO;
+                return false;
+            }
+            //处理具体逻辑
+            callback(out, hdr);
+        }
     }
-  }
-
-  // We only get here if recv fails before we see a NLMSG_DONE.
-  return false;
+    // We only get here if recv fails before we see a NLMSG_DONE.
+    return false;
 }

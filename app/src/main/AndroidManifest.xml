@@ -2,7 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.jnihook">
 
-
     <uses-permission android:name="android.permission.READ_PRIVILEGED_PHONE_STATE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
@@ -13,12 +12,10 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="camel.SWITCH_VPN" />
-    <uses-permission android:name="android.permission.INSTALL_PACKAGES"/>
-    <uses-permission android:name="android.permission.DELETE_PACKAGES"/>
-    <uses-permission android:name="android.permission.CLEAR_APP_CACHE"/>
-    <uses-permission android:name="android.permission.CLEAR_APP_USER_DATA"/>
-    <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
-
+    <uses-permission android:name="android.permission.INSTALL_PACKAGES" />
+    <uses-permission android:name="android.permission.DELETE_PACKAGES" />
+    <uses-permission android:name="android.permission.CLEAR_APP_CACHE" />
+    <uses-permission android:name="android.permission.CLEAR_APP_USER_DATA" />
 
     <application
         android:name=".App"
@@ -26,12 +23,11 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
-        android:supportsRtl="true"
-        >
+        android:supportsRtl="true">
 
-       <service android:name="org.openudid.OpenUDID_service">
+        <service android:name="org.openudid.OpenUDID_service">
             <intent-filter>
-                <action android:name="org.openudid.GETUDID"/>
+                <action android:name="org.openudid.GETUDID" />
             </intent-filter>
         </service>
 
@@ -40,7 +36,6 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>

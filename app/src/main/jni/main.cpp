@@ -91,31 +91,29 @@
 #include <netlink/ifaddrs.h>
 #include <bionic_netlink.h>
 
-
-
 int listmacaddrs(void) {
     struct ifaddrs *ifap, *ifaptr;
 
     if (myGetifaddrs(&ifap) == 0) {
         for (ifaptr = ifap; ifaptr != NULL; ifaptr = (ifaptr)->ifa_next) {
             char macp[INET6_ADDRSTRLEN];
-            if(ifaptr->ifa_addr!= nullptr) {
+            if (ifaptr->ifa_addr != nullptr) {
                 if (((ifaptr)->ifa_addr)->sa_family == AF_PACKET) {
                     auto *sockadd = (struct sockaddr_ll *) (ifaptr->ifa_addr);
                     int i;
                     int len = 0;
                     for (i = 0; i < 6; i++) {
-                        len += sprintf(macp + len, "%02X%s", sockadd->sll_addr[i],( i < 5 ? ":" : ""));
+                        len += sprintf(macp + len, "%02X%s", sockadd->sll_addr[i],
+                                       (i < 5 ? ":" : ""));
                     }
                     //LOGE("%s  %s  ",(ifaptr)->ifa_name,macp)
-                    if(strcmp(ifaptr->ifa_name,"wlan0")== 0){
-                        LOGE("%s  %s  ",(ifaptr)->ifa_name,macp)
+                    if (strcmp(ifaptr->ifa_name, "wlan0") == 0) {
+                        LOGE("%s  %s  ", (ifaptr)->ifa_name, macp)
                         freeifaddrs(ifap);
                         return 1;
                     }
                 }
             }
-
         }
         freeifaddrs(ifap);
         return 0;
@@ -123,8 +121,6 @@ int listmacaddrs(void) {
         return 0;
     }
 }
-
-
 
 extern "C"
 JNIEXPORT void JNICALL

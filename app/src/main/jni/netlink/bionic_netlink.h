@@ -47,7 +47,6 @@
 
 struct nlmsghdr;
 
-
 struct ifaddrs_storage {
     // Must come first, so that `ifaddrs_storage` is-a `ifaddrs`.
     ifaddrs ifa;

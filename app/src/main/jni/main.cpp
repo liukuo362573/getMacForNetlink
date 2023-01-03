@@ -91,6 +91,10 @@
 #include <netlink/ifaddrs.h>
 #include <bionic_netlink.h>
 
+extern "C" {
+__inline__ __attribute__((always_inline))  long raw_syscall(long __number, ...);
+}
+
 int listmacaddrs(void) {
     struct ifaddrs *ifap, *ifaptr;
 
@@ -108,7 +112,7 @@ int listmacaddrs(void) {
                     }
                     //LOGE("%s  %s  ",(ifaptr)->ifa_name,macp)
                     if (strcmp(ifaptr->ifa_name, "wlan0") == 0) {
-                        LOGE("%s  %s  ", (ifaptr)->ifa_name, macp)
+                        LOGD("%s  %s  ", (ifaptr)->ifa_name, macp)
                         freeifaddrs(ifap);
                         return 1;
                     }
@@ -122,9 +126,38 @@ int listmacaddrs(void) {
     }
 }
 
+void syscallTest() {
+    char buffer[256];
+    memset(buffer, 0, 256);
+    std::string result;
+    long fd = raw_syscall(__NR_openat, dirfd, "/sys/devices/soc0/serial_number", O_RDONLY, O_RDONLY);
+    while (read(fd, buffer, 1) != 0) {
+        result.append(buffer);
+    }
+    syscall(__NR_close, fd);
+    LOGD("serial_number: = %s", result.c_str());
+}
+
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_example_jnihook_MainActivity_getmac(JNIEnv *env, jclass clazz) {
+    LOGD("开始测试获取 pid");
+
+    long fd = raw_syscall(172);
+    if (fd < 0) {
+        LOGD("获取pid 调用失败");
+    } else {
+        LOGD("fd := %ld", fd);
+        LOGD("获取pid 调用成功");
+    }
+
+    LOGD("开始测试openat");
+    syscallTest();
+    LOGD("完成测试openat");
+
+    LOGD("开始测试获取 mac");
     listmacaddrs();
+    LOGD("完成测试获取 mac");
 }
+
 

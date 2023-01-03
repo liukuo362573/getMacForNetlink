@@ -3,7 +3,7 @@
 
 #include <android/log.h>
 
-#define TAG "Netlink"
+#define TAG "getMacForNetlink"
 #ifdef CAMEL_BUILD_TYPE_NOLOG
 
 #define LOGE(...)   ((void)0);
